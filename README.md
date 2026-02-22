@@ -21,17 +21,35 @@ WordPress plugin to protect registration, login and password reset with Cloudfla
 
 ## Installation
 
-### 1. Install the plugin
+### Option A: ZIP upload (recommended)
 
-Copy `turnstile-protection.php` into:
+1. Download the latest `turnstile-protection-x.x.x.zip` from the [Releases](../../releases) page
+2. In WordPress admin go to **Plugins → Add New → Upload Plugin**
+3. Select the ZIP file and click **Install Now**
+4. Click **Activate Plugin**
+
+### Option B: Manual installation
+
+1. Download or clone this repository
+2. Copy the **entire** `turnstile-protection/` folder (including `languages/`) into:
 
 ```
-/wp-content/plugins/
+/wp-content/plugins/turnstile-protection/
 ```
 
-### 2. Activate the plugin
+The folder structure should look like this:
 
-Go to **Plugins** in WordPress admin and activate *Turnstile Registration Protection*.
+```
+wp-content/plugins/turnstile-protection/
+├── turnstile-protection.php
+├── languages/
+│   ├── turnstile-protection-de_DE.mo
+│   ├── turnstile-protection-de_DE.po
+│   └── turnstile-protection.pot
+└── README.md
+```
+
+3. Go to **Plugins** in WordPress admin and activate *Turnstile Registration Protection*
 
 ### 3. Set up Cloudflare Turnstile
 
@@ -116,17 +134,35 @@ WordPress-Plugin zum Schutz der Benutzerregistrierung mit Cloudflare Turnstile.
 
 ## Installation
 
-### 1. Plugin installieren
+### Option A: ZIP-Upload (empfohlen)
 
-Kopieren Sie die Datei `turnstile-protection.php` in das Verzeichnis:
+1. Laden Sie die neueste `turnstile-protection-x.x.x.zip` von der [Releases](../../releases)-Seite herunter
+2. Gehen Sie in WordPress-Admin zu **Plugins → Installieren → Plugin hochladen**
+3. Wählen Sie die ZIP-Datei aus und klicken Sie auf **Jetzt installieren**
+4. Klicken Sie auf **Plugin aktivieren**
+
+### Option B: Manuelle Installation
+
+1. Laden Sie dieses Repository herunter oder klonen Sie es
+2. Kopieren Sie den **gesamten** Ordner `turnstile-protection/` (inkl. `languages/`) nach:
 
 ```
-/wp-content/plugins/
+/wp-content/plugins/turnstile-protection/
 ```
 
-### 2. Plugin aktivieren
+Die Ordnerstruktur sollte so aussehen:
 
-Gehen Sie zu **Plugins** in WordPress-Admin und aktivieren Sie *Turnstile Registration Protection*.
+```
+wp-content/plugins/turnstile-protection/
+├── turnstile-protection.php
+├── languages/
+│   ├── turnstile-protection-de_DE.mo
+│   ├── turnstile-protection-de_DE.po
+│   └── turnstile-protection.pot
+└── README.md
+```
+
+3. Gehen Sie zu **Plugins** in WordPress-Admin und aktivieren Sie *Turnstile Registration Protection*
 
 ### 3. Cloudflare Turnstile einrichten
 
