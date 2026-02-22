@@ -4,7 +4,7 @@
  * Description: Protects registration and login with Cloudflare Turnstile against bots
  * Version: 1.1.0
  * Author: Your Name
- * License: GPL v2 or later
+ * License: MIT
  * Requires at least: 5.0
  * Tested up to: 6.7
  * Requires PHP: 7.4

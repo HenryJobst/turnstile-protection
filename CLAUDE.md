@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Projekt
 
-WordPress-Plugin: **Turnstile Registration Protection** – schützt die WordPress-Benutzerregistrierung mit Cloudflare Turnstile (Bot-Schutz). Version 1.1.0, Lizenz GPL v2+.
+WordPress-Plugin: **Turnstile Registration Protection** – schützt die WordPress-Benutzerregistrierung mit Cloudflare Turnstile (Bot-Schutz). Version 1.1.0, MIT License.
 
 ## Build
 
@@ -44,10 +44,14 @@ Beide Funktionen prüfen zuerst, ob Keys gesetzt sind, bevor sie aktiv werden.
 
 ### Verifizierungsablauf
 
-`verify_token()` (private Methode, geteilt von Registration und Login) wird für die Verifizierung genutzt:
+`verify_token(bool $fail_open = false)` (private Methode, geteilt von Registration, Login und Lost Password) wird für die Verifizierung genutzt:
 1. Prüft ob `$_POST['cf-turnstile-response']` vorhanden ist
 2. POST-Request an `https://challenges.cloudflare.com/turnstile/v0/siteverify`
-3. Fügt `WP_Error` hinzu bei Fehler – Registrierung wird nur fortgesetzt wenn keine Fehler
+3. Fügt `WP_Error` hinzu bei Fehler – Aktion wird nur fortgesetzt wenn keine Fehler
+
+**Fail-open/closed Strategie:**
+- Registration & Lost Password: `verify_token()` (fail-closed) — blockiert bei Netzwerkfehlern
+- Login: `verify_token(fail_open: true)` — lässt bei Netzwerkfehlern durch, um Admin-Lockout zu verhindern
 
 **Zentrale Methoden:** `is_configured()` prüft ob beide Keys gesetzt sind; `verify_token()` enthält die gemeinsame Verifizierungslogik.
 

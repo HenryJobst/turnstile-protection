@@ -1,13 +1,110 @@
 # Turnstile Registration Protection
 
+WordPress plugin to protect registration, login and password reset with Cloudflare Turnstile.
+
+## Features
+
+- ✅ Cloudflare Turnstile integration for registration, login and lost password forms
+- ✅ Server-side verification of the Turnstile challenge
+- ✅ Simple configuration via WordPress admin
+- ✅ Multilingual (English/German) with i18n support
+- ✅ Fail-open on login during network errors (no lockout on Cloudflare outage)
+- ✅ Bypass for Application Passwords, XML-RPC, REST API and WP-CLI
+- ✅ No captcha images to solve
+- ✅ Free and unlimited usage
+
+## Requirements
+
+- WordPress 5.0 or higher
+- PHP 7.4 or higher
+- Cloudflare account (free)
+
+## Installation
+
+### 1. Install the plugin
+
+Copy `turnstile-protection.php` into:
+
+```
+/wp-content/plugins/
+```
+
+### 2. Activate the plugin
+
+Go to **Plugins** in WordPress admin and activate *Turnstile Registration Protection*.
+
+### 3. Set up Cloudflare Turnstile
+
+1. Sign in to [Cloudflare](https://dash.cloudflare.com)
+2. Navigate to **Turnstile** in the left menu
+3. Click **Add site**
+4. Fill in the form:
+   - **Site name:** Your website name
+   - **Hostname:** Your domain (e.g. `example.com`)
+   - **Widget Mode:** Managed
+5. Click **Create**
+
+You will receive two keys:
+- **Site Key** (public)
+- **Secret Key** (secret)
+
+### 4. Configure keys in WordPress
+
+1. Go to **Settings → Turnstile Protection**
+2. Enter the **Site Key**
+3. Enter the **Secret Key**
+4. Click **Save Changes**
+
+## How it works
+
+1. Visitor opens the registration, login or lost password page
+2. The Turnstile widget loads automatically
+3. Visitor completes the challenge (usually invisible)
+4. On form submission the response is verified server-side
+5. The action is only executed upon successful verification
+
+### Error behavior
+
+- **Registration & Lost Password:** Fail-closed — blocked on network errors or missing tokens
+- **Login:** Fail-open on network errors — prevents admin lockout during Cloudflare outages. Missing or invalid tokens are still blocked.
+
+## Troubleshooting
+
+### Widget not showing
+
+- Verify that Site Key and Secret Key are entered correctly
+- Check the browser console for JavaScript errors
+- Make sure no ad blockers are blocking the script
+
+### Verification fails
+
+- Verify that the Secret Key is correct
+- Ensure the hostname in Cloudflare matches your domain
+- Check that your server allows outgoing HTTPS requests
+
+## GDPR notice
+
+Cloudflare Turnstile is GDPR compliant. More information:
+https://www.cloudflare.com/privacypolicy/
+
+## License
+
+MIT License — see [LICENSE](LICENSE)
+
+---
+
+# Turnstile Registration Protection (Deutsch)
+
 WordPress-Plugin zum Schutz der Benutzerregistrierung mit Cloudflare Turnstile.
 
 ## Funktionen
 
-- ✅ Cloudflare Turnstile Integration im Registrierungsformular
+- ✅ Cloudflare Turnstile Integration in Registrierung, Login und Passwort-vergessen
 - ✅ Serverseitige Verifizierung der Turnstile-Challenge
 - ✅ Einfache Konfiguration über WordPress-Admin
-- ✅ Deutsche Fehlermeldungen
+- ✅ Mehrsprachig (Deutsch/Englisch) mit i18n-Support
+- ✅ Fail-open beim Login bei Netzwerkfehlern (kein Lockout bei Cloudflare-Ausfall)
+- ✅ Bypass für Application Passwords, XML-RPC, REST API und WP-CLI
 - ✅ Keine Captcha-Bilder lösen nötig
 - ✅ Kostenlos und unbegrenzt nutzbar
 
@@ -55,11 +152,16 @@ Sie erhalten nun zwei Keys:
 
 ## Funktionsweise
 
-1. Besucher öffnet die Registrierungsseite
+1. Besucher öffnet die Registrierungs-, Login- oder Passwort-vergessen-Seite
 2. Turnstile-Widget wird automatisch geladen
 3. Besucher löst die Challenge (meist unsichtbar)
-4. Bei Registrierung wird die Antwort serverseitig verifiziert
-5. Nur bei erfolgreicher Verifizierung wird der Benutzer erstellt
+4. Bei Absenden des Formulars wird die Antwort serverseitig verifiziert
+5. Nur bei erfolgreicher Verifizierung wird die Aktion ausgeführt
+
+### Fehlerverhalten
+
+- **Registrierung & Passwort-vergessen:** Fail-closed — bei Netzwerkfehlern oder fehlendem Token wird die Aktion blockiert
+- **Login:** Fail-open bei Netzwerkfehlern — verhindert Admin-Lockout bei Cloudflare-Ausfall. Fehlende oder ungültige Tokens werden weiterhin blockiert
 
 ## Fehlerbehebung
 
@@ -80,10 +182,10 @@ Sie erhalten nun zwei Keys:
 Cloudflare Turnstile ist DSGVO-konform. Weitere Informationen:
 https://www.cloudflare.com/de-de/privacypolicy/
 
+## Lizenz
+
+MIT License — siehe [LICENSE](LICENSE)
+
 ## Support
 
 Bei Problemen oder Fragen erstellen Sie bitte ein Issue im Repository.
-
-## Lizenz
-
-GPL v2 oder später
