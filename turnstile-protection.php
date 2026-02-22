@@ -69,6 +69,8 @@ class Turnstile_Protection {
     }
 
     public function verify_registration(WP_Error $errors, string $user_login, string $user_email): WP_Error {
+        // Intentional: fail-closed when unconfigured (blocks all registration).
+        // verify_login passes through when unconfigured to prevent admin lockout.
         if (!$this->is_configured()) {
             $errors->add(
                 'turnstile_not_configured',
@@ -106,7 +108,7 @@ class Turnstile_Protection {
             return $user;
         }
 
-        if ( ! empty( $_SERVER['HTTP_AUTHORIZATION'] ) || ! empty( $_SERVER['PHP_AUTH_USER'] ) ) {
+        if ( isset( $_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW'] ) ) {
             return $user;
         }
 
