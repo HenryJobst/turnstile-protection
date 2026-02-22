@@ -16,17 +16,20 @@ Erstellt `turnstile-protection-1.0.0.zip` mit `turnstile-protection.php` und `RE
 
 ## Architektur
 
-Das Plugin besteht aus einer einzigen Datei (`turnstile-protection.php`) ohne Klassen – reines prozedurales PHP mit WordPress-Hooks.
+Das Plugin besteht aus einer einzigen Datei (`turnstile-protection.php`). Die Klasse `Turnstile_Protection` (Singleton) kapselt alle Hooks, Einstellungen und Verifizierungslogik.
 
 ### WordPress-Hook-Registrierung (Einstiegspunkte)
 
-| Hook | Funktion | Zweck |
-|------|----------|-------|
-| `admin_menu` | `turnstile_protection_add_admin_menu` | Settings-Seite unter Einstellungen → Turnstile Schutz |
-| `admin_init` | `turnstile_protection_register_settings` | WordPress Settings API: Felder `turnstile_protection_site_key` + `_secret_key` |
-| `login_enqueue_scripts` | `turnstile_protection_enqueue_script` | Lädt Cloudflare Turnstile JS (`challenges.cloudflare.com`) |
-| `register_form` | `turnstile_protection_add_field` | Fügt `<div class="cf-turnstile">` in das Registrierungsformular ein |
-| `registration_errors` (Filter) | `turnstile_protection_verify` | Serverseitige Verifizierung via `wp_remote_post` zur Cloudflare API |
+| Hook | Methode | Zweck |
+|------|---------|-------|
+| `plugins_loaded` | `load_textdomain` | Lädt Übersetzungen aus `/languages` |
+| `admin_menu` | `add_admin_menu` | Settings-Seite unter Einstellungen → Turnstile Schutz |
+| `admin_init` | `register_settings` | WordPress Settings API: Felder `turnstile_protection_site_key` + `_secret_key` |
+| `login_enqueue_scripts` | `enqueue_script` | Lädt Cloudflare Turnstile JS (nur auf `login`/`register` Seiten) |
+| `register_form` | `render_widget` | Fügt `<div class="cf-turnstile">` in das Registrierungsformular ein |
+| `login_form` | `render_widget` | Fügt `<div class="cf-turnstile">` in das Login-Formular ein |
+| `registration_errors` (Filter) | `verify_registration` | Serverseitige Verifizierung bei Registrierung |
+| `authenticate` (Filter, Prio 10) | `verify_login` | Serverseitige Verifizierung beim Login; überspringt XML-RPC, REST API, WP-CLI |
 
 ### Konfiguration
 
@@ -38,11 +41,13 @@ Beide Funktionen prüfen zuerst, ob Keys gesetzt sind, bevor sie aktiv werden.
 
 ### Verifizierungsablauf
 
-`turnstile_protection_verify` wird als `registration_errors`-Filter aufgerufen:
+`verify_token()` (private Methode, geteilt von Registration und Login) wird für die Verifizierung genutzt:
 1. Prüft ob Secret Key konfiguriert ist
 2. Prüft ob `$_POST['cf-turnstile-response']` vorhanden ist
 3. POST-Request an `https://challenges.cloudflare.com/turnstile/v0/siteverify`
 4. Fügt `WP_Error` hinzu bei Fehler – Registrierung wird nur fortgesetzt wenn keine Fehler
+
+**Zentrale Methoden:** `is_configured()` prüft ob beide Keys gesetzt sind; `verify_token()` enthält die gemeinsame Verifizierungslogik.
 
 ## Voraussetzungen
 
