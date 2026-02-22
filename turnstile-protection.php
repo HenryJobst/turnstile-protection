@@ -5,6 +5,9 @@
  * Version: 1.1.0
  * Author: Your Name
  * License: GPL v2 or later
+ * Requires at least: 5.0
+ * Tested up to: 6.7
+ * Requires PHP: 7.4
  * Text Domain: turnstile-protection
  * Domain Path: /languages
  */
@@ -121,7 +124,7 @@ class Turnstile_Protection {
             return $user;
         }
 
-        $result = $this->verify_token();
+        $result = $this->verify_token( fail_open: true );
         if (is_wp_error($result)) {
             return $result;
         }
@@ -228,9 +231,10 @@ class Turnstile_Protection {
     // --- Core verification -----------------------------------------------------
 
     /**
+     * @param bool $fail_open Whether to allow through on network errors (used for login).
      * @return true|WP_Error
      */
-    private function verify_token() {
+    private function verify_token( bool $fail_open = false ) {
         if (empty(wp_unslash($_POST['cf-turnstile-response'] ?? ''))) {
             return new WP_Error(
                 'turnstile_missing',
@@ -250,6 +254,9 @@ class Turnstile_Protection {
         ]);
 
         if (is_wp_error($response)) {
+            if ( $fail_open ) {
+                return true;
+            }
             return new WP_Error(
                 'turnstile_error',
                 __('Verification failed. Please try again later.', 'turnstile-protection')
