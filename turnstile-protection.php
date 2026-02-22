@@ -1,11 +1,12 @@
 <?php
 /**
  * Plugin Name: Turnstile Registration Protection
- * Description: Schützt Registrierung und Login mit Cloudflare Turnstile vor Bots
+ * Description: Protects registration and login with Cloudflare Turnstile against bots
  * Version: 1.1.0
  * Author: Your Name
  * License: GPL v2 or later
  * Text Domain: turnstile-protection
+ * Domain Path: /languages
  */
 
 defined('ABSPATH') || exit;
