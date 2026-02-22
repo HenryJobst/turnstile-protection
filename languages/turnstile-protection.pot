@@ -1,0 +1,47 @@
+# Turnstile Registration Protection
+# Copyright (C) 2024
+# This file is distributed under the same license as the plugin.
+msgid ""
+msgstr ""
+"Project-Id-Version: Turnstile Registration Protection 1.1.0\n"
+"POT-Creation-Date: 2026-02-22\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Domain: turnstile-protection\n"
+
+#: turnstile-protection.php
+msgid "Turnstile Protection"
+msgstr ""
+
+#: turnstile-protection.php
+msgid "Cloudflare Turnstile Configuration"
+msgstr ""
+
+#: turnstile-protection.php
+msgid "Site Key"
+msgstr ""
+
+#: turnstile-protection.php
+msgid "Secret Key"
+msgstr ""
+
+#: turnstile-protection.php
+msgid "Get your keys at:"
+msgstr ""
+
+#: turnstile-protection.php
+msgid "Turnstile is not configured. Please contact the administrator."
+msgstr ""
+
+#: turnstile-protection.php
+msgid "Please confirm that you are not a robot."
+msgstr ""
+
+#: turnstile-protection.php
+msgid "Verification failed. Please try again later."
+msgstr ""
+
+#: turnstile-protection.php
+msgid "Verification failed. Please try again."
+msgstr ""

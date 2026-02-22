@@ -74,7 +74,7 @@ class Turnstile_Protection {
         if (!$this->is_configured()) {
             $errors->add(
                 'turnstile_not_configured',
-                __('Turnstile ist nicht konfiguriert. Bitte kontaktieren Sie den Administrator.', 'turnstile-protection')
+                __('Turnstile is not configured. Please contact the administrator.', 'turnstile-protection')
             );
             return $errors;
         }
@@ -128,8 +128,8 @@ class Turnstile_Protection {
 
     public function add_admin_menu(): void {
         add_options_page(
-            __('Turnstile Schutz', 'turnstile-protection'),
-            __('Turnstile Schutz', 'turnstile-protection'),
+            __('Turnstile Protection', 'turnstile-protection'),
+            __('Turnstile Protection', 'turnstile-protection'),
             'manage_options',
             'turnstile-protection',
             [$this, 'render_settings_page']
@@ -150,7 +150,7 @@ class Turnstile_Protection {
 
         add_settings_section(
             'turnstile_protection_main',
-            __('Cloudflare Turnstile Konfiguration', 'turnstile-protection'),
+            __('Cloudflare Turnstile Configuration', 'turnstile-protection'),
             null,
             'turnstile-protection'
         );
@@ -198,7 +198,7 @@ class Turnstile_Protection {
                 ?>
             </form>
             <p>
-                <?php esc_html_e('Keys erhalten Sie unter:', 'turnstile-protection'); ?>
+                <?php esc_html_e('Get your keys at:', 'turnstile-protection'); ?>
                 <a href="https://dash.cloudflare.com/?to=/:account/turnstile" target="_blank" rel="noopener noreferrer">Cloudflare Turnstile</a>
             </p>
         </div>
@@ -214,7 +214,7 @@ class Turnstile_Protection {
         if (empty(wp_unslash($_POST['cf-turnstile-response'] ?? ''))) {
             return new WP_Error(
                 'turnstile_missing',
-                __('Bitte bestätigen Sie, dass Sie kein Roboter sind.', 'turnstile-protection')
+                __('Please confirm that you are not a robot.', 'turnstile-protection')
             );
         }
 
@@ -232,7 +232,7 @@ class Turnstile_Protection {
         if (is_wp_error($response)) {
             return new WP_Error(
                 'turnstile_error',
-                __('Verifizierung fehlgeschlagen. Bitte versuchen Sie es später erneut.', 'turnstile-protection')
+                __('Verification failed. Please try again later.', 'turnstile-protection')
             );
         }
 
@@ -241,7 +241,7 @@ class Turnstile_Protection {
         if (!is_array($body) || empty($body['success'])) {
             return new WP_Error(
                 'turnstile_failed',
-                __('Verifizierung fehlgeschlagen. Bitte versuchen Sie es erneut.', 'turnstile-protection')
+                __('Verification failed. Please try again.', 'turnstile-protection')
             );
         }
 
