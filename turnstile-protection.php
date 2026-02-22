@@ -10,7 +10,6 @@
 
 defined('ABSPATH') || exit;
 
-define('TURNSTILE_PROTECTION_VERSION', '1.1.0');
 
 class Turnstile_Protection {
 
@@ -25,7 +24,7 @@ class Turnstile_Protection {
         add_action('register_form',         [$this, 'render_widget']);
         add_action('login_form',            [$this, 'render_widget']);
         add_filter('registration_errors',   [$this, 'verify_registration'], 10, 3);
-        add_filter('authenticate',          [$this, 'verify_login'], 10, 3);
+        add_filter('authenticate',          [$this, 'verify_login'], 20, 3);
     }
 
     public static function get_instance(): self {
@@ -107,11 +106,12 @@ class Turnstile_Protection {
             return $user;
         }
 
+        if ( ! empty( $_SERVER['HTTP_AUTHORIZATION'] ) || ! empty( $_SERVER['PHP_AUTH_USER'] ) ) {
+            return $user;
+        }
+
         if (!$this->is_configured()) {
-            return new WP_Error(
-                'turnstile_not_configured',
-                __('Turnstile ist nicht konfiguriert. Bitte kontaktieren Sie den Administrator.', 'turnstile-protection')
-            );
+            return $user;
         }
 
         $result = $this->verify_token();
@@ -136,10 +136,14 @@ class Turnstile_Protection {
 
     public function register_settings(): void {
         register_setting('turnstile_protection_settings', 'turnstile_protection_site_key', [
-            'sanitize_callback' => 'sanitize_text_field',
+            'sanitize_callback' => static function( string $value ): string {
+                return trim( $value );
+            },
         ]);
         register_setting('turnstile_protection_settings', 'turnstile_protection_secret_key', [
-            'sanitize_callback' => 'sanitize_text_field',
+            'sanitize_callback' => static function( string $value ): string {
+                return trim( $value );
+            },
         ]);
 
         add_settings_section(
@@ -193,7 +197,7 @@ class Turnstile_Protection {
             </form>
             <p>
                 <?php esc_html_e('Keys erhalten Sie unter:', 'turnstile-protection'); ?>
-                <a href="https://dash.cloudflare.com/?to=/:account/turnstile" target="_blank">Cloudflare Turnstile</a>
+                <a href="https://dash.cloudflare.com/?to=/:account/turnstile" target="_blank" rel="noopener noreferrer">Cloudflare Turnstile</a>
             </p>
         </div>
         <?php
@@ -205,7 +209,7 @@ class Turnstile_Protection {
      * @return true|WP_Error
      */
     private function verify_token() {
-        if (empty($_POST['cf-turnstile-response'])) {
+        if (empty(wp_unslash($_POST['cf-turnstile-response'] ?? ''))) {
             return new WP_Error(
                 'turnstile_missing',
                 __('Bitte bestätigen Sie, dass Sie kein Roboter sind.', 'turnstile-protection')
