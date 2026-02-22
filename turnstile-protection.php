@@ -21,11 +21,14 @@ class Turnstile_Protection {
         add_action('plugins_loaded',        [$this, 'load_textdomain']);
         add_action('admin_menu',            [$this, 'add_admin_menu']);
         add_action('admin_init',            [$this, 'register_settings']);
+        add_action('admin_notices',         [$this, 'activation_notice']);
         add_action('login_enqueue_scripts', [$this, 'enqueue_script']);
         add_action('register_form',         [$this, 'render_widget']);
         add_action('login_form',            [$this, 'render_widget']);
+        add_action('lostpassword_form',     [$this, 'render_widget']);
         add_filter('registration_errors',   [$this, 'verify_registration'], 10, 3);
         add_filter('authenticate',          [$this, 'verify_login'], 20, 3);
+        add_action('lostpassword_post',     [$this, 'verify_lostpassword']);
     }
 
     public static function get_instance(): self {
@@ -47,7 +50,7 @@ class Turnstile_Protection {
 
     public function enqueue_script(): void {
         $action = sanitize_key(wp_unslash($_GET['action'] ?? 'login'));
-        if (!$this->is_configured() || !in_array($action, ['login', 'register'], true)) {
+        if (!$this->is_configured() || !in_array($action, ['login', 'register', 'lostpassword'], true)) {
             return;
         }
         wp_enqueue_script(
@@ -109,7 +112,8 @@ class Turnstile_Protection {
             return $user;
         }
 
-        if ( isset( $_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW'] ) ) {
+        // Bypass for Application Passwords (HTTP Basic Auth without form login)
+        if ( isset( $_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW'] ) && empty( $_POST['log'] ) ) {
             return $user;
         }
 
@@ -123,6 +127,21 @@ class Turnstile_Protection {
         }
 
         return $user;
+    }
+
+    public function verify_lostpassword(WP_Error $errors): void {
+        if (!$this->is_configured()) {
+            $errors->add(
+                'turnstile_not_configured',
+                __('Turnstile is not configured. Please contact the administrator.', 'turnstile-protection')
+            );
+            return;
+        }
+
+        $result = $this->verify_token();
+        if (is_wp_error($result)) {
+            $errors->add($result->get_error_code(), $result->get_error_message());
+        }
     }
 
     // --- Admin -----------------------------------------------------------------
@@ -263,7 +282,27 @@ class Turnstile_Protection {
         return !empty($this->get_site_key()) && !empty($this->get_secret_key());
     }
 
+    public function activation_notice(): void {
+        if (!get_transient('turnstile_protection_activated') || $this->is_configured()) {
+            return;
+        }
+        printf(
+            '<div class="notice notice-warning"><p>%s <a href="%s">%s</a></p></div>',
+            esc_html__('Turnstile Protection is activated but not yet configured.', 'turnstile-protection'),
+            esc_url(admin_url('options-general.php?page=turnstile-protection')),
+            esc_html__('Configure now', 'turnstile-protection')
+        );
+    }
+
     // --- Lifecycle -------------------------------------------------------------
+
+    public static function activate(): void {
+        set_transient('turnstile_protection_activated', true, 30);
+    }
+
+    public static function deactivate(): void {
+        delete_transient('turnstile_protection_activated');
+    }
 
     public static function uninstall(): void {
         delete_option('turnstile_protection_site_key');
@@ -272,4 +311,6 @@ class Turnstile_Protection {
 }
 
 Turnstile_Protection::get_instance();
+register_activation_hook(__FILE__, ['Turnstile_Protection', 'activate']);
+register_deactivation_hook(__FILE__, ['Turnstile_Protection', 'deactivate']);
 register_uninstall_hook(__FILE__, ['Turnstile_Protection', 'uninstall']);

@@ -28,8 +28,11 @@ Das Plugin besteht aus einer einzigen Datei (`turnstile-protection.php`). Die Kl
 | `login_enqueue_scripts` | `enqueue_script` | Lädt Cloudflare Turnstile JS (nur auf `login`/`register` Seiten) |
 | `register_form` | `render_widget` | Fügt `<div class="cf-turnstile">` in das Registrierungsformular ein |
 | `login_form` | `render_widget` | Fügt `<div class="cf-turnstile">` in das Login-Formular ein |
+| `lostpassword_form` | `render_widget` | Fügt `<div class="cf-turnstile">` in das Passwort-vergessen-Formular ein |
 | `registration_errors` (Filter) | `verify_registration` | Serverseitige Verifizierung bei Registrierung |
-| `authenticate` (Filter, Prio 10) | `verify_login` | Serverseitige Verifizierung beim Login; überspringt XML-RPC, REST API, WP-CLI |
+| `authenticate` (Filter, Prio 20) | `verify_login` | Serverseitige Verifizierung beim Login; überspringt XML-RPC, REST API, WP-CLI |
+| `lostpassword_post` | `verify_lostpassword` | Serverseitige Verifizierung beim Passwort-zurücksetzen |
+| `admin_notices` | `activation_notice` | Zeigt Konfigurations-Warnung nach Plugin-Aktivierung |
 
 ### Konfiguration
 

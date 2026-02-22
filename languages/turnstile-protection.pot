@@ -48,3 +48,11 @@ msgstr ""
 #: turnstile-protection.php
 msgid "Verification failed. Please try again."
 msgstr ""
+
+#: turnstile-protection.php
+msgid "Turnstile Protection is activated but not yet configured."
+msgstr ""
+
+#: turnstile-protection.php
+msgid "Configure now"
+msgstr ""

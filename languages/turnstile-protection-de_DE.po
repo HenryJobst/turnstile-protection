@@ -49,3 +49,11 @@ msgstr "Verifizierung fehlgeschlagen. Bitte versuchen Sie es später erneut."
 #: turnstile-protection.php
 msgid "Verification failed. Please try again."
 msgstr "Verifizierung fehlgeschlagen. Bitte versuchen Sie es erneut."
+
+#: turnstile-protection.php
+msgid "Turnstile Protection is activated but not yet configured."
+msgstr "Turnstile Schutz ist aktiviert, aber noch nicht konfiguriert."
+
+#: turnstile-protection.php
+msgid "Configure now"
+msgstr "Jetzt konfigurieren"
