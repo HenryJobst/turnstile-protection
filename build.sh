@@ -1,0 +1,11 @@
+#!/bin/bash
+
+PLUGIN_NAME="turnstile-protection"
+VERSION="1.0.0"
+
+zip -r "${PLUGIN_NAME}-${VERSION}.zip" \
+    turnstile-protection.php \
+    README.md \
+    -x "*.DS_Store"
+
+echo "Archiv erstellt: ${PLUGIN_NAME}-${VERSION}.zip"
