@@ -91,11 +91,19 @@ class Turnstile_Protection {
      * @return WP_User|WP_Error|null
      */
     public function verify_login($user, string $username, string $password) {
+        if (is_wp_error($user)) {
+            return $user;
+        }
+
         if (empty($username) || empty($password)) {
             return $user;
         }
 
-        if ((defined('XMLRPC_REQUEST') && XMLRPC_REQUEST) || (defined('REST_REQUEST') && REST_REQUEST)) {
+        if (
+            (defined('XMLRPC_REQUEST') && XMLRPC_REQUEST) ||
+            (defined('REST_REQUEST') && REST_REQUEST) ||
+            (defined('WP_CLI') && WP_CLI)
+        ) {
             return $user;
         }
 
@@ -184,7 +192,7 @@ class Turnstile_Protection {
                 ?>
             </form>
             <p>
-                <?php echo __('Keys erhalten Sie unter:', 'turnstile-protection'); ?>
+                <?php esc_html_e('Keys erhalten Sie unter:', 'turnstile-protection'); ?>
                 <a href="https://dash.cloudflare.com/?to=/:account/turnstile" target="_blank">Cloudflare Turnstile</a>
             </p>
         </div>
@@ -224,7 +232,7 @@ class Turnstile_Protection {
 
         $body = json_decode(wp_remote_retrieve_body($response), true);
 
-        if (empty($body['success'])) {
+        if (!is_array($body) || empty($body['success'])) {
             return new WP_Error(
                 'turnstile_failed',
                 __('Verifizierung fehlgeschlagen. Bitte versuchen Sie es erneut.', 'turnstile-protection')
