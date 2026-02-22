@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Turnstile Registration Protection
- * Description: Protects user registration with Cloudflare Turnstile
- * Version: 1.0.0
+ * Description: Schützt Registrierung und Login mit Cloudflare Turnstile vor Bots
+ * Version: 1.1.0
  * Author: Your Name
  * License: GPL v2 or later
  * Text Domain: turnstile-protection
@@ -10,156 +10,251 @@
 
 defined('ABSPATH') || exit;
 
-define('TURNSTILE_PROTECTION_VERSION', '1.0.0');
+define('TURNSTILE_PROTECTION_VERSION', '1.1.0');
 
-add_action('admin_menu', 'turnstile_protection_add_admin_menu');
-add_action('admin_init', 'turnstile_protection_register_settings');
-add_action('login_enqueue_scripts', 'turnstile_protection_enqueue_script');
-add_action('register_form', 'turnstile_protection_add_field');
-add_filter('registration_errors', 'turnstile_protection_verify', 10, 3);
+class Turnstile_Protection {
 
-function turnstile_protection_add_admin_menu() {
-    add_options_page(
-        __('Turnstile Schutz', 'turnstile-protection'),
-        __('Turnstile Schutz', 'turnstile-protection'),
-        'manage_options',
-        'turnstile-protection',
-        'turnstile_protection_settings_page'
-    );
-}
+    /** @var self|null */
+    private static $instance = null;
 
-function turnstile_protection_register_settings() {
-    register_setting('turnstile_protection_settings', 'turnstile_protection_site_key');
-    register_setting('turnstile_protection_settings', 'turnstile_protection_secret_key');
-
-    add_settings_section(
-        'turnstile_protection_main',
-        __('Cloudflare Turnstile Konfiguration', 'turnstile-protection'),
-        null,
-        'turnstile-protection'
-    );
-
-    add_settings_field(
-        'turnstile_protection_site_key',
-        __('Site Key', 'turnstile-protection'),
-        'turnstile_protection_site_key_render',
-        'turnstile-protection',
-        'turnstile_protection_main'
-    );
-
-    add_settings_field(
-        'turnstile_protection_secret_key',
-        __('Secret Key', 'turnstile-protection'),
-        'turnstile_protection_secret_key_render',
-        'turnstile-protection',
-        'turnstile_protection_main'
-    );
-}
-
-function turnstile_protection_site_key_render() {
-    $value = get_option('turnstile_protection_site_key', '');
-    printf(
-        '<input type="text" name="turnstile_protection_site_key" value="%s" class="regular-text">',
-        esc_attr($value)
-    );
-}
-
-function turnstile_protection_secret_key_render() {
-    $value = get_option('turnstile_protection_secret_key', '');
-    printf(
-        '<input type="password" name="turnstile_protection_secret_key" value="%s" class="regular-text">',
-        esc_attr($value)
-    );
-}
-
-function turnstile_protection_settings_page() {
-    ?>
-    <div class="wrap">
-        <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
-        <form action="options.php" method="post">
-            <?php
-            settings_fields('turnstile_protection_settings');
-            do_settings_sections('turnstile-protection');
-            submit_button();
-            ?>
-        </form>
-        <p>
-            <?php _e('Keys erhalten Sie unter:', 'turnstile-protection'); ?>
-            <a href="https://dash.cloudflare.com/?to=/:account/turnstile" target="_blank">Cloudflare Turnstile</a>
-        </p>
-    </div>
-    <?php
-}
-
-function turnstile_protection_enqueue_script() {
-    if (!get_option('turnstile_protection_site_key')) {
-        return;
+    private function __construct() {
+        add_action('plugins_loaded',        [$this, 'load_textdomain']);
+        add_action('admin_menu',            [$this, 'add_admin_menu']);
+        add_action('admin_init',            [$this, 'register_settings']);
+        add_action('login_enqueue_scripts', [$this, 'enqueue_script']);
+        add_action('register_form',         [$this, 'render_widget']);
+        add_action('login_form',            [$this, 'render_widget']);
+        add_filter('registration_errors',   [$this, 'verify_registration'], 10, 3);
+        add_filter('authenticate',          [$this, 'verify_login'], 10, 3);
     }
 
-    wp_enqueue_script(
-        'turnstile-protection',
-        'https://challenges.cloudflare.com/turnstile/v0/api.js',
-        array(),
-        null,
-        true
-    );
-}
-
-function turnstile_protection_add_field() {
-    $site_key = get_option('turnstile_protection_site_key');
-    if (!$site_key) {
-        return;
+    public static function get_instance(): self {
+        if (self::$instance === null) {
+            self::$instance = new self();
+        }
+        return self::$instance;
     }
-    ?>
-    <div class="turnstile-container" style="margin: 10px 0;">
-        <div class="cf-turnstile" data-sitekey="<?php echo esc_attr($site_key); ?>"></div>
-    </div>
-    <?php
-}
 
-function turnstile_protection_verify($errors, $sanitized_user_login, $user_email) {
-    $secret_key = get_option('turnstile_protection_secret_key');
-    
-    if (!$secret_key) {
-        $errors->add(
-            'turnstile_not_configured',
-            __('Turnstile ist nicht konfiguriert. Bitte kontaktieren Sie den Administrator.', 'turnstile-protection')
+    // --- Hooks -----------------------------------------------------------------
+
+    public function load_textdomain(): void {
+        load_plugin_textdomain(
+            'turnstile-protection',
+            false,
+            dirname(plugin_basename(__FILE__)) . '/languages'
         );
+    }
+
+    public function enqueue_script(): void {
+        $action = sanitize_key(wp_unslash($_GET['action'] ?? 'login'));
+        if (!$this->is_configured() || !in_array($action, ['login', 'register'], true)) {
+            return;
+        }
+        wp_enqueue_script(
+            'cf-turnstile',
+            'https://challenges.cloudflare.com/turnstile/v0/api.js',
+            [],
+            null,
+            true
+        );
+    }
+
+    public function render_widget(): void {
+        if (!$this->is_configured()) {
+            return;
+        }
+        printf(
+            '<div class="turnstile-container" style="margin: 10px 0;"><div class="cf-turnstile" data-sitekey="%s"></div></div>',
+            esc_attr($this->get_site_key())
+        );
+    }
+
+    public function verify_registration(WP_Error $errors, string $user_login, string $user_email): WP_Error {
+        if (!$this->is_configured()) {
+            $errors->add(
+                'turnstile_not_configured',
+                __('Turnstile ist nicht konfiguriert. Bitte kontaktieren Sie den Administrator.', 'turnstile-protection')
+            );
+            return $errors;
+        }
+
+        $result = $this->verify_token();
+        if (is_wp_error($result)) {
+            $errors->add($result->get_error_code(), $result->get_error_message());
+        }
+
         return $errors;
     }
 
-    if (empty($_POST['cf-turnstile-response'])) {
-        $errors->add(
-            'turnstile_missing',
-            __('Bitte bestätigen Sie, dass Sie kein Roboter sind.', 'turnstile-protection')
-        );
-        return $errors;
+    /**
+     * @param WP_User|WP_Error|null $user
+     * @return WP_User|WP_Error|null
+     */
+    public function verify_login($user, string $username, string $password) {
+        if (empty($username) || empty($password)) {
+            return $user;
+        }
+
+        if ((defined('XMLRPC_REQUEST') && XMLRPC_REQUEST) || (defined('REST_REQUEST') && REST_REQUEST)) {
+            return $user;
+        }
+
+        if (!$this->is_configured()) {
+            return new WP_Error(
+                'turnstile_not_configured',
+                __('Turnstile ist nicht konfiguriert. Bitte kontaktieren Sie den Administrator.', 'turnstile-protection')
+            );
+        }
+
+        $result = $this->verify_token();
+        if (is_wp_error($result)) {
+            return $result;
+        }
+
+        return $user;
     }
 
-    $response = wp_remote_post('https://challenges.cloudflare.com/turnstile/v0/siteverify', array(
-        'body' => array(
-            'secret'   => $secret_key,
-            'response' => sanitize_text_field(wp_unslash($_POST['cf-turnstile-response'])),
-            'remoteip' => $_SERVER['REMOTE_ADDR'],
-        ),
-    ));
+    // --- Admin -----------------------------------------------------------------
 
-    if (is_wp_error($response)) {
-        $errors->add(
-            'turnstile_error',
-            __('Verifizierung fehlgeschlagen. Bitte versuchen Sie es später erneut.', 'turnstile-protection')
-        );
-        return $errors;
-    }
-
-    $body = json_decode(wp_remote_retrieve_body($response), true);
-
-    if (empty($body['success'])) {
-        $errors->add(
-            'turnstile_failed',
-            __('Verifizierung fehlgeschlagen. Bitte versuchen Sie es erneut.', 'turnstile-protection')
+    public function add_admin_menu(): void {
+        add_options_page(
+            __('Turnstile Schutz', 'turnstile-protection'),
+            __('Turnstile Schutz', 'turnstile-protection'),
+            'manage_options',
+            'turnstile-protection',
+            [$this, 'render_settings_page']
         );
     }
 
-    return $errors;
+    public function register_settings(): void {
+        register_setting('turnstile_protection_settings', 'turnstile_protection_site_key', [
+            'sanitize_callback' => 'sanitize_text_field',
+        ]);
+        register_setting('turnstile_protection_settings', 'turnstile_protection_secret_key', [
+            'sanitize_callback' => 'sanitize_text_field',
+        ]);
+
+        add_settings_section(
+            'turnstile_protection_main',
+            __('Cloudflare Turnstile Konfiguration', 'turnstile-protection'),
+            null,
+            'turnstile-protection'
+        );
+
+        add_settings_field(
+            'turnstile_protection_site_key',
+            __('Site Key', 'turnstile-protection'),
+            [$this, 'render_site_key_field'],
+            'turnstile-protection',
+            'turnstile_protection_main'
+        );
+
+        add_settings_field(
+            'turnstile_protection_secret_key',
+            __('Secret Key', 'turnstile-protection'),
+            [$this, 'render_secret_key_field'],
+            'turnstile-protection',
+            'turnstile_protection_main'
+        );
+    }
+
+    public function render_site_key_field(): void {
+        printf(
+            '<input type="text" name="turnstile_protection_site_key" value="%s" class="regular-text">',
+            esc_attr($this->get_site_key())
+        );
+    }
+
+    public function render_secret_key_field(): void {
+        printf(
+            '<input type="password" name="turnstile_protection_secret_key" value="%s" class="regular-text">',
+            esc_attr($this->get_secret_key())
+        );
+    }
+
+    public function render_settings_page(): void {
+        ?>
+        <div class="wrap">
+            <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
+            <form action="options.php" method="post">
+                <?php
+                settings_fields('turnstile_protection_settings');
+                do_settings_sections('turnstile-protection');
+                submit_button();
+                ?>
+            </form>
+            <p>
+                <?php echo __('Keys erhalten Sie unter:', 'turnstile-protection'); ?>
+                <a href="https://dash.cloudflare.com/?to=/:account/turnstile" target="_blank">Cloudflare Turnstile</a>
+            </p>
+        </div>
+        <?php
+    }
+
+    // --- Core verification -----------------------------------------------------
+
+    /**
+     * @return true|WP_Error
+     */
+    private function verify_token() {
+        if (empty($_POST['cf-turnstile-response'])) {
+            return new WP_Error(
+                'turnstile_missing',
+                __('Bitte bestätigen Sie, dass Sie kein Roboter sind.', 'turnstile-protection')
+            );
+        }
+
+        $remote_ip = filter_var($_SERVER['REMOTE_ADDR'] ?? '', FILTER_VALIDATE_IP);
+
+        $response = wp_remote_post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [
+            'timeout' => 10,
+            'body'    => [
+                'secret'   => $this->get_secret_key(),
+                'response' => sanitize_text_field(wp_unslash($_POST['cf-turnstile-response'])),
+                'remoteip' => $remote_ip ?: '',
+            ],
+        ]);
+
+        if (is_wp_error($response)) {
+            return new WP_Error(
+                'turnstile_error',
+                __('Verifizierung fehlgeschlagen. Bitte versuchen Sie es später erneut.', 'turnstile-protection')
+            );
+        }
+
+        $body = json_decode(wp_remote_retrieve_body($response), true);
+
+        if (empty($body['success'])) {
+            return new WP_Error(
+                'turnstile_failed',
+                __('Verifizierung fehlgeschlagen. Bitte versuchen Sie es erneut.', 'turnstile-protection')
+            );
+        }
+
+        return true;
+    }
+
+    // --- Helpers ---------------------------------------------------------------
+
+    private function get_site_key(): string {
+        return (string) get_option('turnstile_protection_site_key', '');
+    }
+
+    private function get_secret_key(): string {
+        return (string) get_option('turnstile_protection_secret_key', '');
+    }
+
+    private function is_configured(): bool {
+        return !empty($this->get_site_key()) && !empty($this->get_secret_key());
+    }
+
+    // --- Lifecycle -------------------------------------------------------------
+
+    public static function uninstall(): void {
+        delete_option('turnstile_protection_site_key');
+        delete_option('turnstile_protection_secret_key');
+    }
 }
+
+Turnstile_Protection::get_instance();
+register_uninstall_hook(__FILE__, ['Turnstile_Protection', 'uninstall']);
