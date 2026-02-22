@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Projekt
 
-WordPress-Plugin: **Turnstile Registration Protection** – schützt die WordPress-Benutzerregistrierung mit Cloudflare Turnstile (Bot-Schutz). Version 1.0.0, Lizenz GPL v2+.
+WordPress-Plugin: **Turnstile Registration Protection** – schützt die WordPress-Benutzerregistrierung mit Cloudflare Turnstile (Bot-Schutz). Version 1.1.0, Lizenz GPL v2+.
 
 ## Build
 
@@ -12,7 +12,7 @@ WordPress-Plugin: **Turnstile Registration Protection** – schützt die WordPre
 bash build.sh
 ```
 
-Erstellt `turnstile-protection-1.0.0.zip` mit `turnstile-protection.php` und `README.md` für die WordPress-Plugin-Installation.
+Erstellt `turnstile-protection-1.1.0.zip` mit `turnstile-protection.php` und `README.md` für die WordPress-Plugin-Installation.
 
 ## Architektur
 
@@ -42,10 +42,9 @@ Beide Funktionen prüfen zuerst, ob Keys gesetzt sind, bevor sie aktiv werden.
 ### Verifizierungsablauf
 
 `verify_token()` (private Methode, geteilt von Registration und Login) wird für die Verifizierung genutzt:
-1. Prüft ob Secret Key konfiguriert ist
-2. Prüft ob `$_POST['cf-turnstile-response']` vorhanden ist
-3. POST-Request an `https://challenges.cloudflare.com/turnstile/v0/siteverify`
-4. Fügt `WP_Error` hinzu bei Fehler – Registrierung wird nur fortgesetzt wenn keine Fehler
+1. Prüft ob `$_POST['cf-turnstile-response']` vorhanden ist
+2. POST-Request an `https://challenges.cloudflare.com/turnstile/v0/siteverify`
+3. Fügt `WP_Error` hinzu bei Fehler – Registrierung wird nur fortgesetzt wenn keine Fehler
 
 **Zentrale Methoden:** `is_configured()` prüft ob beide Keys gesetzt sind; `verify_token()` enthält die gemeinsame Verifizierungslogik.
 
